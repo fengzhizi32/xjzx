@@ -1,3 +1,6 @@
+	
+	第一天
+		
 nosql===>redis+mysql
 键 值
 string---》字符串，int
@@ -75,3 +78,152 @@ git merge 分支名称===》将指定分支的代码，合并到当前分支
 	git push origin itcast
 https://www.yuntongxun.com/===>免费发送短信
 https://www.qiniu.com/========>免费的文件存储服务器
+
+
+	第二天
+	
+git的作用---景雷
+	Git是一款分布式版本控制系统
+	分布式：可以将代码存储在多台电脑上，互为备份
+	版本控制系统：对于单人或多人，更方便的管理源代码
+创建仓库并添加忽略文件---张凌钘
+	以gitee为例
+	创建.gitignore文件
+	*.pyc
+	.idea/
+常用命令---李振华
+	git add .
+	git commit -m ''
+	git push origin 分支
+分支命令---刘冬冬
+	git branch
+	git checkout 
+	git merge 分支名称
+====================反馈
+*** 公钥是每个项目都得创建一个上传到服务器吗？换个路径之类的需要重新生成么？ 
+答：每个项目都得添加钥匙
+	在linux中只生成一次即可
+*** 课堂反馈时间不合适，太早了，建议在放在晚上九点以后。 
+王军航 项目一脸懵. 
+马健茹 老师讲的很详细，知识点反复总结 
+王功镖 吸收比较慢 
+====================项目框架搭建
+xjzx11--->仓库
+xjzx--->项目
+info--->项目的代码
+	config.py--->配置（复制粘贴，改等号右边的值）
+		1.mysql的连接
+		2.redis的连接
+		3.session的配置
+	init.py--->封装创建flask对象的方法
+		创建app对象时：
+			1.加载配置
+			2.初始化mysql
+			3.初始化redis
+			4.启动CSRF保护
+			5.启动Session存储到redis中
+			6.启动日志(复制粘贴)
+	modules---->存放所有的视图
+		index--->存放首页的视图
+			__init__.py--->创建蓝图对象
+			views.py--->定义视图函数
+			修改info/__init__.py文件的create_app函数，添加注册蓝图的代码
+xjzx.py--->manage.py--->启动项目
+====================在pycharm中管理仓库
+ctrl+alt+a===>git add .
+ctrl+k=======>git commit -m ''
+ctrl+shift+k==>git push origin itcast
+====================模型类
+数据表：
+	用户
+	新闻
+	新闻分类
+	评论（回复）
+	点赞
+关系表：
+	用户发布新闻为1对多，则在多的端定义外键，在1的端定义关系属性
+	用户收藏新闻为多对多，则新建外键表，在任意端定义关系属性
+	分类与新闻为1对多，则在新闻中定义外键，在分类中定义关系属性
+	新闻与评论为1对多，则。。。。。
+	评论与回复为1对多，则。。。，自关联
+	评论与点赞为1对多，。。。。。
+	用户关注作者为多对多，则新建外键表，在任意端定义关系属性
+		特别说明：用户与作者是同一张表，属于自关联
+====================关系
+一对多的关系，如分类与新闻
+	定义：
+		外键：在News类中category_id = db.Column(db.Integer, db.ForeignKey("info_category.id"))
+		关系属性：在Category类中news_list = db.relationship('News', backref='category', lazy='dynamic')
+	使用：已知分类对象category，获取对应的新闻category.news_list====>select * from news where category_id=category.id
+		已知新闻对象news，获取对应的分类对象news.category====>select * from category where id=news.category_id
+一对多的自关联，如评论与回复
+	定义
+	    外键：在回复表中，parent_id = db.Column(db.Integer, db.ForeignKey("info_comment.id"))  # 父评论id
+		关系属性：在评论表中，表示根据评论找回复backs_list=db.relationship('Comment',lazy='dynamic',backref='comemnt')
+	使用：
+		已知评论对象comment，获取回复comment.backs_list=======>select * from comment where parent_id=comment.id
+		已知回复对象back，获取评论对象back.comment============>select * from comment where id=back.parent_id
+多对多的关系，如用户收藏新闻
+	定义：
+		外键：新表
+			tb_user_news_collection = db.Table(
+				"info_user_news_collection",
+				db.Column("user_id", db.Integer, db.ForeignKey("info_user.id"), primary_key=True),  # 新闻编号
+				db.Column("news_id", db.Integer, db.ForeignKey("info_news.id"), primary_key=True),  # 分类编号
+				db.Column("create_time", db.DateTime, default=datetime.now)  # 收藏创建时间
+			)
+		关系属性：随便，此处写在了用户表中
+			collection_news = db.relationship(
+				"News", 
+				secondary=tb_user_news_collection, 
+				lazy="dynamic",
+				#backref='user_list'
+				backref=db.backref('user_list',lazy='dynamic')
+			)
+	使用：
+		已知用户对象user，获取所有收藏的新闻user.collection_news=======>select news_id from info_user_news_collection where user_id=user.id
+			select * from news where id in (select news_id from info_user_news_collection where user_id=user.id)
+		已知新闻对象news，获取所有收藏这个新闻的用户news.user_list=====>select user_id from info_user_news_collection where news_id=news.id
+			select * from user where id in (select user_id from info_user_news_collection where news_id=news.id)
+多对多的自关联，如用户关注作者
+	定义：
+		外键：中间表
+			tb_user_author = db.Table(
+				"info_user_author",
+				db.Column('user_id', db.Integer, db.ForeignKey('info_user.id'), primary_key=True),  # 浏览者编号
+				db.Column('author_id', db.Integer, db.ForeignKey('info_user.id'), primary_key=True)  # 作者编号
+			)
+		关系属性：因为作者、用户是同一个类，所以就定义在这个类中
+			authors = db.relationship(
+				'User',
+				lazy='dynamic',
+				secondary=tb_user_author,
+				primaryjoin=id == tb_user_author.c.user_id,
+				secondaryjoin=id == tb_user_author.c.author_id,
+				backref=db.backref('users', lazy='dynamic')
+			)
+	使用：
+		已知用户对象user，获取关注的作者user.authors====>select author_id from tb_user_author where ***=user.id===>user_id=user.id
+			select * from users where id in (select author_id from tb_user_author where user_id=user.id)
+		已知用户对象author，获取关注这个作者的用户author.users====>select user_id from tb_user_author where ***=user.id===>author_id=user.id
+			select * from user where id in (select user_id from tb_user_author where ***=user.id)s
+====================总结
+能够使用 Pycharm 对项目进行一系列源代码管理操作
+	1.在settings中添加
+	2.ctrl+alt+a
+	3.ctrl+k
+	4.ctrl+shift+k
+能够根据需求写出项目中所使用的SQLAlchemy、Session、Redis相关配置
+	1.复制代码
+	2.修改配置
+能够参照课件思路抽取出项目入口文件 manage.py
+	1.新xjzx.py===>manage.py
+	2.创建app对象
+	3.创建manager对象
+	4.在main中启动项目manage.run()
+能够说出日志记录在项目中的作用
+	记录代码运行过程中的错误信息，方便开发人员维护代码，修改bug
+能够集成Flask-Script扩展使项目支持命令行的形式运行
+	扩展迁移命令
+	Migrate(app,db)
+	manager.add_command('db',MigrateCommand)
