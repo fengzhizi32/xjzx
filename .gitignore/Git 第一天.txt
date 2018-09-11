@@ -227,3 +227,5 @@ ctrl+shift+k==>git push origin itcast
 	扩展迁移命令
 	Migrate(app,db)
 	manager.add_command('db',MigrateCommand)
+	
+	
