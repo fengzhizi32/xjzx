@@ -363,3 +363,303 @@ ctrl+shift+k==>git push origin itcast
 能够使用代码实现退出登录后端逻辑
 	1.删除session中的键
 	2.响应
+	
+	第四天
+
+图片验证码--武睿敏
+	1.引入包captcha：生成4位随机字符串，使用Pillow中提供的类进行图形绘制
+	2.将验证码字符串保存----》redis中
+	3.向响应报文中输出图片数据---->make_response('')
+	4.浏览器默认将数据作为text/html解析，当前数据为图片，所以需要设置response.headers['Content-Type']='image/png'
+	5.当用户输入文本提交后，接收文本值(upper(),lower())，从redis中读取数据（bytes===>decode()），进行对比
+短信验证码--王博
+	1.接收手机号、图形验证码
+	2.验证图形验证码是否正确，如果不正确，则不发短信，防止某些人复用这个程序向某个手机号不断发短信
+	3.随机生成6位数字，保存到redis中
+	4.调用第三方包进行短信发送=====>与第三方短信运营商对接，云通讯
+	5.用户输入短信后提交，读取redis中的验证码（decode()），对比
+发送短信--史洋
+	阅读官方文档
+	1.下载官方sdk===>software development kit
+	2.拷贝到libs目录下===>pip,拷贝到libs
+	3.调用类及方法
+		REST
+		sendTemplateSMS(手机号,[短信内容],模板id)
+注册--杜世雄
+	1.接收:手机号、短信验证码、密码
+	2.验证：
+	3.处理：向User表中添加数据
+	4.响应：jsonify()
+登录--陈雷
+	1.接收：手机号、密码
+	2.验证：非空
+	3.处理：查询User表中的数据
+		状态保持session['user_id']=user.id
+	4.响应
+退出--贾鹏霄
+	3.处理：删除登录时的状态保持
+		del
+		pop()
+	4.响应
+====================反馈
+*** 麻烦老师,多画图讲解,这样会倾斜一些,对这里面的一些内置函数功能有的不知道,老是忘 
+答：多重复
+*** 老师 能不能帮我们稍微扩展一个， 就好比生成4位字符验证码一样 如果在今后就业 公司业务需求要6位验证码，那么最简单的方法应该是把4位的验证码稍作修改（可能是想的简单了），那么老师你能不能带我们把哪些第三方的东西过一遍，混个脸熟就现在而言 第一个flask项目 是复制粘贴来的， 复制粘贴课件我们也会，不用花大把时间来这样 
+答：根据需要查看官方文档
+*** 课堂反馈晚点做，还不知道哪里会哪里不会，如果直接做课堂反馈，现在我的感觉就是哪里都不会 
+*** 老师能不能把笔记的字体再放大一些，谢谢。 
+*** 数据报文的请求流程用断点演示一下，至少说一下逻辑的流程，根本不知道往哪里粘贴 
+答：main.js文件拷贝
+	当浏览器请求服务器后，服务器会返回html、css、js
+	当浏览器接收到js后，会执行，如为a绑定点击事件，当a被点击时，$.ajax()===>向flask发起一个局部刷新的请求
+*** 从浏览器带来的保存图形验证码的唯一标识有点不是很清楚 有时候真的需要画图理解一下，希望老师能方便的话，课上画点关系图，便于分析逻辑及加深印象，不然没印象，上课的时候听着能跟上，课下就不知道怎么想，看着您的笔记，按步骤也不直到咋实现 
+答：当浏览器遇到img标签时，会自动请求src的地址，获取图片，获取后将图片渲染在img的位置
+*** 在图形验证码那一块,获取客户端一个唯一标识,用于做为存入redis的key,code_id = request.args.get('code_id'),这里的code_id是args里的,那么他是怎么生成的?演示的时候老师是手动输入的,我自己单独试了试,发现获取不了,不知道是不是哪里有误区. 
+答：查看 main.js中的generateImageCode()===>generateUUID()
+*** 希望老师讲课的时候带些感**彩，有些温度。。。。。。 
+答：臣妾做不到
+*** 听不懂 也看不懂 写代码都不知道从哪开始写 上课跟不上思路 大脑空白状态 感觉好难啊 
+答：先理思路，再按照思路写注释，填写，用代码填写注释的功能
+*** ajax请求头里带过来的token，到服务器这边是怎么实现验证的
+答：CSRFProtect(app)
+*** user.password=password，但在User表中没有password字段，只有password_hash???
+答：增强代码的可读性
+	class Person(object):
+		def __init__(self):
+			self.__age=10
+		@property
+		def age(self):
+			return self.__age
+		@age.setter
+		def age(self,value):
+			self.__age=value
+	调用：
+	p=Person()
+	p.age
+	p.age=***
+*** 岐哥，前端代码里面也有验证，这个验证是在前端和后端都需要验证一下吗？
+答：不相信来源于浏览器的数据
+*** 获取图片验证码的请求是怎么发送的，设置图片的src属性，获取到图片验证码？
+答：为img标签设置src属性，则浏览器会自动向指定的网址发请求
+pillow官方文档：https://pillow.readthedocs.io/en/5.2.x/installation.html
+====================新闻首页
+导入示例数据：source data.sql;
+------用户登录状态
+从session中读取用户编号
+根据编号查询用户对象
+------新闻分类
+查询分类表的所有数据
+转字典输出（用什么传什么）
+------点击排行
+查询新闻
+	按点击量排序order_by()
+	取前6条limit()
+------新闻列表
+定义新视图，返回json数据
+filter_by()
+order_by()
+paginate()
+	.item
+	.pages
+====================新闻详情页面
+显示detail.html页面
+------模板继承
+	1.在浏览器中查看页面，找到哪些区域相同，哪些区域不同
+	2.打开html文件，分上下窗口
+	3.ctrl+shift+减号===》将所有代码折叠
+	4.逐层打开，逐段处理
+------显示数据
+	1.查询需要显示的数据
+	2.在模板中{{变量}}
+用户发布新闻为1对多的关系
+用户收藏新闻为多对多的关系
+------登录装饰器
+	1.必须return视图函数的返回值
+	2.为装饰器内的函数添加@functools.wraps(view)===>返回view函数的名称
+	3.在装饰器内部为g变量赋值，可以在视图中访问g变量中的数据
+------404
+@app.errorhandler(404)
+def ***():
+	pass
+====================总结
+首页显示
+	查询分类
+	查询用户登录状态
+	查询点击排行
+	查询新闻列表（分类条件，分页）
+详情页的显示
+	模板继承
+	查询数据并显示
+	使用装饰器封装用户是否登录
+	自定义404处理
+能够参照课件步骤使用代码实现新闻点击排行后端逻辑
+	News.query.order_by(News.clicks.desc()).limit(6)
+能够参照课件步骤使用代码实现新闻列表后端数据查询逻辑
+	a=News.query
+	if int(cid)>0:
+		a=a.filter_by(category_id=cid)
+	a=a.order_by(***).paginate(int(page),int(per_page),False)
+能够写出SQLAlchemy的分页查询获取数据以及总页数的相关代码
+	pagination.items===>获取当前页数据
+	pagination.pages===>总页数
+能够说出下次拉加载更多的代码实现步骤
+	1.获取窗口高度x
+	2.获取页面高度y
+	3.计算可滚动高度z=y-x
+	4.获取已滚动高度k
+	5.计算剩余高度m=z-k
+	6.判断m值if m<***:发起ajax请求
+能够完成新闻首页和新闻详情页的基类模板抽取
+	1.预览页面
+	2.找出相同的html代码，剪切到base.html
+	3.不同的代码填充到block中
+能够使用装饰器的形式完成用户数据的查询并传递到视图函数中
+	1.必须返回值return view()
+	2.给内部函数添加@funtools.wraps(view)===>返回原view函数的名称
+	3.使用全局变量g传递数据
+能够查询新闻详情页数据并使用模板语言进行数据的展示
+	news=News.query.get_or_404()
+	{{data.news.****}}
+
+	第五天
+	
+查询新闻点击排行
+	News.query.order_by(News.clicks.desc()).limit(...)
+查询指定分类cid的指定页page数据
+	a=News.query
+	if cid>0:
+		a=a.filter_by(category_id=cid)
+	a=a.order_by(News.id.desc()).paginate(page,per_page,False)
+获取分页对象的当前页数据、总页数
+	.items===>当前页数据
+	.pages===>总页数
+视图函数使用装饰器
+	1.必须返回结果return view()
+	2.在内部函数使用@functools.wraps(view)==>返回原函数的名称
+		/===>index======>fun2
+		/<news_id>===>detail===>fun2
+		在flask中，如果不同的路由规则指向同一个视图函数则会抛异常
+	3.在装饰器中的数据保存到g变量，在视图函数中可以通过g变量访问
+====================反馈
+*** 听不懂，听不懂，听不懂，感觉知识点一汇总，，越差越多。感觉还行的知识点，一到项目就不会用了。。。而且以后的课堂反馈都放在晚上可以么。。。。。。。。。。本来就在复习。直接做课堂反馈。。。。我该选啥。。 
+答：使用之前学的知识点进行功能实现，并不与之前讲的知识点冲突
+	实名反馈
+*** 装饰器不懂！！！！！！！！！！！！！！！！！！ 
+答：
+	def fun1(fn):
+		def fun2():
+			....
+			response=fn()
+			....
+		return fun2
+*** 老师讲的很好，好评！ 
+*** 老师能不能讲一下flask里应用上下文和请求上下文有啥不一样 
+答：
+	请求上下文：request,session
+	应用上下文：g,current_app
+*** 为什么捕获异常显示404页面时 需要调用装饰器视图函数@login_vwrapps 
+答：在404页面的右上角，需要显示用户登录状态
+*** $.get()请求，后端就用request.args.get()获取参数，  之前用request.json.get()获取，这块不是很清楚
+答：$.get()===>get===>request.args.get()
+	$.ajax()==>post==>request.json.get()
+	表单=====>post===>request.form.get()
+*** 岐哥，判断状态保持的时候，session中不是还存有‘nick_name’吗?哪个不需要判断吗？
+答：只选择其中一个做判断即可
+	阶段性的演示，当时完成登录后，为了能够在首页看到效果，在session中加了其它数据
+	现在已经完成index视图的编写，不再需要存储其它数据
+*** g变量可以携带的数据 可以是一次请求中的任意数据吗
+答：是，包含python类型，自定义类型的对象
+*** 课件代码中paginate = News.query.filter(*filters).order_by(xxx)).paginate(xxx) 
+ *filters中* 是什么意思
+答：函数(*列表,**字典)====>拆包，解包
+	fun(10,20,30)====>a=[10,20,30]===>fun(*a)
+session 和 数据报文 之间的关系
+答：session需要从数据报文中获取session id，再根据session id到redis中查询数据
+	session依赖于cookie
+====================收藏
+一个用户可以收藏多个新闻，一个新闻可以被多个用户收藏
+用户--收藏--新闻的关系为多对多
+业务：向收藏中间表中添加或删除数据
+------收藏
+user=User()
+user.***=***
+db.session.add(user)
+db.session.commit()
+当前知识点：向中间表中添加数据
+注意：中间表没有对应模型类
+解决：通过关系属性
+代码实现：user.collection_news===>查询到用户收藏的新闻，结果是列表[news,news,...]
+	向列表中添加数据：
+		user.collection_news.append(news)
+		db.session.commit()
+------取消收藏
+	user.collection_news.remove(news)
+	db.session.commit()
+涉及到的代码
+	views.py
+	detail.html
+	detail.js
+====================评论
+业务：操作Comment表
+------添加评论
+向Comment表中添加数据
+	1.创建对象
+	2.属性赋值
+	3.db.session.add(对象)
+	4.db.session.commit()
+------评论列表
+从Comemnt表中查询数据
+	模型类.query.filter_by()
+	news.comments
+----关于请求方式
+如果进行查询则使用get
+如果进行增加、修改、删除则使用post
+====================回复
+业务：操作Comment表
+关键：parent_id
+	如果此属性为null，则为评论
+	如果此属性为非null，则为回复，此值是评论的id
+------添加回复
+使用上面写好的comment_add()视图
+接收参数parent_id
+判断非空，则为comment.parent_id=赋值
+------回复列表
+{
+	id:
+	msg:
+	user:
+	news:
+	replys:[
+		{},
+		{},...
+	]
+}
+vue
+====================点赞
+业务：操作CommentLike表
+------点赞
+添加数据
+------取消
+删除数据
+------查询
+查询数据
+====================总结
+能够使用代码判断用户是否收藏某个新闻
+	news in user.collection_news
+能够写出新闻收藏和取消收藏的后端代码逻辑
+	收藏：user.collection_news.append(new)
+	取消：user.collection_news.remove(new)
+能够写出新闻评论的后端逻辑
+	新建评论对象
+	属性赋值
+	保存
+能够写出新闻点赞的后端逻辑
+	新建点赞对象
+	属性赋值
+	保存
+能够说出指定新闻的评论列表里面当前用户都点赞了哪些评论的查询逻辑
+	1.查询当前新闻的所有评论
+	2.查询当前用户点赞过的当前新闻的所有评论
+	3.遍历所有评论，判断是否被点赞
+
+	
